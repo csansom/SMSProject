@@ -3,13 +3,27 @@
 <head>
     <meta charset="utf-8" />
     <title></title>
+    <script type="text/javascript">
+        var sendSMS = function sendSMS() {
+            var xhr = new XMLHttpRequest();
+            var login = 'csansom';
+            var password = 'b8f26140e4837dc4bba68ded9504a7f3';
+            xhr.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    alert('Message \'' + message.value + '\' has been sent to ' + phone.value);
+                }
+            }
+            xhr.open('GET', 'http://api.smsfeedback.ru/messages/v2/send/?login=' + login + '&password='
+                + password + '&phone=%2B' + phone.value + '&text=\'' + message.value + '\'', true);
+            xhr.send();
+        }
+    </script>
 </head>
 <body>
-    Hello World!
     <div>
         Message: <input id="message" type="text" />
         Phone: <input id="phone" type="text" />
-        <input id="Button1" type="button" value="Send SMS" onclick="alert('Message \'' + message.value + '\' has been sent to ' + phone.value );" />
+        <input id="Button1" type="button" value="Send SMS" onclick="sendSMS()" />
     </div>
 </body>
 </html>
