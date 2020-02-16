@@ -6,8 +6,8 @@
     <script type="text/javascript">
         var sendSMS = function sendSMS() {
             var xhr = new XMLHttpRequest();
-            var login = 'csansom';
-            var password = 'b8f26140e4837dc4bba68ded9504a7f3';
+            var login = 'your login';
+            var password = 'your password';
             xhr.onreadystatechange = function () {
                 if (this.readyState == 4 && this.status == 200) {
                     alert('Message \'' + message.value + '\' has been sent to ' + phone.value);
