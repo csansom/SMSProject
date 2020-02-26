@@ -3,27 +3,50 @@
 <head>
     <meta charset="utf-8" />
     <title></title>
-    <script type="text/javascript">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script>
         var sendSMS = function sendSMS() {
+            $.ajax({
+                type: "POST",
+                url: 'http://localhost/SMSProject/db.asmx/SendAlerts',
+                success: function (msg) {
+                    $("#result").html(msg);
+                }, error: function (e) {
+                    alert('Could not connect to web service.');
+                }
+            });
+
+            /*
+            var request = new XMLHttpRequest();
+            request.open('POST', 'db.php', true);
+            request.send();
+            
+            $.ajax({
+                url: "db.php",
+                success: function (response) {
+                    $("#result").append(response);
+                }
+            });
+  
             var xhr = new XMLHttpRequest();
-            var login = 'your login';
-            var password = 'your password';
+            var login = 'csansom';
+            var password = 'b8f26140e4837dc4bba68ded9504a7f3';
             xhr.onreadystatechange = function () {
                 if (this.readyState == 4 && this.status == 200) {
                     alert('Message \'' + message.value + '\' has been sent to ' + phone.value);
                 }
             }
             xhr.open('GET', 'http://api.smsfeedback.ru/messages/v2/send/?login=' + login + '&password='
-                + password + '&phone=%2B' + phone.value + '&text=\'' + message.value + '\'', true);
+                + password + '&phone=%2B' + phone.value + '&text=' + message.value + '', true);
             xhr.send();
+            */
         }
     </script>
 </head>
 <body>
     <div>
-        Message: <input id="message" type="text" />
-        Phone: <input id="phone" type="text" />
         <input id="Button1" type="button" value="Send SMS" onclick="sendSMS()" />
     </div>
+    <div id="result"></div>
 </body>
 </html>
