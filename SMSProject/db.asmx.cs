@@ -25,17 +25,41 @@ namespace SMSProject
         [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
         public string SendAlerts()
         {
-            using (SqlConnection sqlCon = new SqlConnection(@"Data Source=DESKTOP-N3SBF80\SQLEXPRESS;Initial Catalog=DB_A4A060_cs;Integrated Security=True"))
+            using (SqlConnection sqlCon = new SqlConnection(@"Data Source=DESKTOP-N3SBF80\SQLEXPRESS;Initial Catalog=DB_A4A060_cs;Integrated Security=True;MultipleActiveResultSets=true"))
             {
                 sqlCon.Open();
-                using (SqlDataAdapter sqlDA = new SqlDataAdapter("select * from Z_AlertLogs", sqlCon))
+                using (SqlDataAdapter sqlDA = new SqlDataAdapter("select * from Z_AlertLogs left join Log on Z_AlertLogs.id = Log.id where Z_AlertLogs.date_emailsent >= convert(datetime2, \'" + DateTime.Today + "\') and Log.id is null", sqlCon))
                 {
                     DataTable outputTable = new DataTable();
                     sqlDA.Fill(outputTable);
+                    int messagesSent = 0;
                     foreach (DataRow row in outputTable.Rows)
                     {
-                        Context.Response.Output.Write(row["email"] + "\n");
+                        using (SqlCommand recipientCommand = new SqlCommand("select name from FarmInfo where phone_number = " + row["phone_number"], sqlCon))
+                        {
+                            SqlDataReader reader = recipientCommand.ExecuteReader();
+                            string recipient = "";
+                            while (reader.Read())
+                                recipient = reader.GetString(0);
+                              using (SqlCommand command = new SqlCommand("set IDENTITY_INSERT dbo.Log on; insert into Log(id, user_id, page, function_query, error, note, datestamp) VALUES(@id, @user_id, @page, @function_query, @error, @note, @datestamp); set IDENTITY_INSERT dbo.Log off;", sqlCon))
+                              {
+                                  string note = "Hello " + recipient + ".\n" + row["message"];
+
+                                  command.Parameters.AddWithValue("@id", row["id"]);
+                                  command.Parameters.AddWithValue("@user_id", "SMSService");
+                                  command.Parameters.AddWithValue("@page", "/SMSProject/db.asmx/SendAlerts");
+                                  command.Parameters.AddWithValue("@function_query", "insert into log(id, user_id, page, function_query, error, note, datestamp) VALUES(@id, @user_id, @page, @function_query, @error, @note, @datestamp)");
+                                  command.Parameters.AddWithValue("@error", "No Error");
+                                  command.Parameters.AddWithValue("@note", "message:\'" + note + "\' has been sent.");
+                                  command.Parameters.AddWithValue("@datestamp", DateTime.Today);
+
+                                  int result = command.ExecuteNonQuery();
+
+                                  messagesSent++;
+                              }
+                        }
                     }
+                    Context.Response.Output.WriteLine(messagesSent + " alert(s) send.");
                 }
                 sqlCon.Close();
             }
