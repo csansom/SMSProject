@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Net;
 using System.Web;
 using System.Web.Script.Services;
 using System.Web.Services;
@@ -41,22 +42,33 @@ namespace SMSProject
                             string recipient = "";
                             while (reader.Read())
                                 recipient = reader.GetString(0);
-                              using (SqlCommand command = new SqlCommand("set IDENTITY_INSERT dbo.Log on; insert into Log(id, user_id, page, function_query, error, note, datestamp) VALUES(@id, @user_id, @page, @function_query, @error, @note, @datestamp); set IDENTITY_INSERT dbo.Log off;", sqlCon))
-                              {
-                                  string note = "Hello " + recipient + ".\n" + row["message"];
 
-                                  command.Parameters.AddWithValue("@id", row["id"]);
-                                  command.Parameters.AddWithValue("@user_id", "SMSService");
-                                  command.Parameters.AddWithValue("@page", "/SMSProject/db.asmx/SendAlerts");
-                                  command.Parameters.AddWithValue("@function_query", "insert into log(id, user_id, page, function_query, error, note, datestamp) VALUES(@id, @user_id, @page, @function_query, @error, @note, @datestamp)");
-                                  command.Parameters.AddWithValue("@error", "No Error");
-                                  command.Parameters.AddWithValue("@note", "message:\'" + note + "\' has been sent.");
-                                  command.Parameters.AddWithValue("@datestamp", DateTime.Today);
+                            // Fill in these feilds.
+                            string login = "your SMSFeedback login";
+                            string password = "your SMSFeedback password";
 
-                                  int result = command.ExecuteNonQuery();
+                            string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row["phone_number"] + "&text=" + row["message"];
 
-                                  messagesSent++;
-                              }
+                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                            request.Method = "GET";
+                            var response = request.GetResponse();
+
+                            using (SqlCommand command = new SqlCommand("set IDENTITY_INSERT dbo.Log on; insert into Log(id, user_id, page, function_query, error, note, datestamp) VALUES(@id, @user_id, @page, @function_query, @error, @note, @datestamp); set IDENTITY_INSERT dbo.Log off;", sqlCon))
+                            {
+                                string note = "Hello " + recipient + ".\n" + row["message"];
+
+                                command.Parameters.AddWithValue("@id", row["id"]);
+                                command.Parameters.AddWithValue("@user_id", "SMSService");
+                                command.Parameters.AddWithValue("@page", "/SMSProject/db.asmx/SendAlerts");
+                                command.Parameters.AddWithValue("@function_query", "insert into log(id, user_id, page, function_query, error, note, datestamp) VALUES(@id, @user_id, @page, @function_query, @error, @note, @datestamp)");
+                                command.Parameters.AddWithValue("@error", "No Error");
+                                command.Parameters.AddWithValue("@note", "message:\'" + note + "\' has been sent.");
+                                command.Parameters.AddWithValue("@datestamp", DateTime.Today);
+
+                                int result = command.ExecuteNonQuery();
+
+                                messagesSent++;
+                            }
                         }
                     }
                     Context.Response.Output.WriteLine(messagesSent + " alert(s) send.");

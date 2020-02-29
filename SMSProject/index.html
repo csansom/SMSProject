@@ -15,31 +15,6 @@
                     alert('Could not connect to web service.');
                 }
             });
-
-            /*
-            var request = new XMLHttpRequest();
-            request.open('POST', 'db.php', true);
-            request.send();
-            
-            $.ajax({
-                url: "db.php",
-                success: function (response) {
-                    $("#result").append(response);
-                }
-            });
-  
-            var xhr = new XMLHttpRequest();
-            var login = 'csansom';
-            var password = 'b8f26140e4837dc4bba68ded9504a7f3';
-            xhr.onreadystatechange = function () {
-                if (this.readyState == 4 && this.status == 200) {
-                    alert('Message \'' + message.value + '\' has been sent to ' + phone.value);
-                }
-            }
-            xhr.open('GET', 'http://api.smsfeedback.ru/messages/v2/send/?login=' + login + '&password='
-                + password + '&phone=%2B' + phone.value + '&text=' + message.value + '', true);
-            xhr.send();
-            */
         }
     </script>
 </head>
