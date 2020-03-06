@@ -26,33 +26,38 @@ namespace SMSProject
         [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
         public string SendAlerts()
         {
-            using (SqlConnection sqlCon = new SqlConnection(@"Data Source=DESKTOP-N3SBF80\SQLEXPRESS;Initial Catalog=DB_A4A060_cs;Integrated Security=True;MultipleActiveResultSets=true"))
+            using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
             {
-                sqlCon.Open();
-                using (SqlDataAdapter sqlDA = new SqlDataAdapter("select * from Z_AlertLogs left join Log on Z_AlertLogs.id = Log.id where Z_AlertLogs.date_emailsent >= convert(datetime2, \'" + DateTime.Today + "\') and Log.id is null", sqlCon))
+                var rows = db.Z_AlertLogs.Join(db.FarmCows,
+                                               z_alerts => z_alerts.bolus_id,
+                                               farm_cows => farm_cows.Bolus_ID,
+                                               (z_alerts, farm_cows) => new { z_alerts, farm_cows })
+                                               .Join(db.AspNetUsers,
+                                               combined_entry => combined_entry.farm_cows.AspNetUser_ID,
+                                               asp_users => asp_users.Id,
+                                               (combined_entry, asp_users) => new {
+                                                   msgID = combined_entry.z_alerts.id,
+                                                   msg = combined_entry.z_alerts.message,
+                                                   date = combined_entry.z_alerts.date_emailsent,
+                                                   phoneNumber = asp_users.PhoneNumber
+                                               });
+                int messagesSent = 0;
+                foreach (var row in rows)
                 {
-                    DataTable outputTable = new DataTable();
-                    sqlDA.Fill(outputTable);
-                    int messagesSent = 0;
-                    foreach (DataRow row in outputTable.Rows)
+                    if (DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddMinutes(-30)) >= 0)
                     {
-                        using (SqlCommand recipientCommand = new SqlCommand("select name from FarmInfo where phone_number = " + row["phone_number"], sqlCon))
-                        {
-                            SqlDataReader reader = recipientCommand.ExecuteReader();
-                            string recipient = "";
-                            while (reader.Read())
-                                recipient = reader.GetString(0);
+                        // Fill in these feilds.
+                        string login = "your sms feedback ID";
+                        string password = "your sms feedback password";
+                        string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + row.msg;
 
-                            // Fill in these feilds.
-                            string login = "your SMSFeedback login";
-                            string password = "your SMSFeedback password";
+                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                        request.Method = "GET";
+                        var response = request.GetResponse();
+                        messagesSent++;
+                    }
 
-                            string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row["phone_number"] + "&text=" + row["message"];
-
-                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                            request.Method = "GET";
-                            var response = request.GetResponse();
-
+                        /*    
                             using (SqlCommand command = new SqlCommand("set IDENTITY_INSERT dbo.Log on; insert into Log(id, user_id, page, function_query, error, note, datestamp) VALUES(@id, @user_id, @page, @function_query, @error, @note, @datestamp); set IDENTITY_INSERT dbo.Log off;", sqlCon))
                             {
                                 string note = "Hello " + recipient + ".\n" + row["message"];
@@ -68,12 +73,9 @@ namespace SMSProject
                                 int result = command.ExecuteNonQuery();
 
                                 messagesSent++;
-                            }
-                        }
-                    }
-                    Context.Response.Output.WriteLine(messagesSent + " alert(s) send.");
+                            }*/
                 }
-                sqlCon.Close();
+                Context.Response.Output.WriteLine(messagesSent + " alert(s) were sent at " + DateTime.Now.ToString() + ".");
             }
             Context.Response.End();
             return string.Empty;
