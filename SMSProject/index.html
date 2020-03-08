@@ -5,22 +5,27 @@
     <title></title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script>
-        var sendSMS = setInterval(function sendSMS() {
-            $.ajax({
-                type: "POST",
-                url: 'http://localhost/SMSProject/db.asmx/SendAlerts',
-                success: function (msg) {
-                    $("#result").html(msg);
-                }, error: function (e) {
-                    alert('Could not connect to web service.');
-                }
-            });
-        }, 30 * 60 * 1000);
+        var sendSMS = function sendSMS() {
+            var now = new Date();
+            var timestamp = new Date(now.getTime() + 30 * 60000);
+            $("#result").html("Will check for alerts at " + timestamp + ".");
+            setInterval(function () {
+                $.ajax({
+                    type: "POST",
+                    url: 'http://localhost/SMSProject/db.asmx/SendAlerts',
+                    success: function (msg) {
+                        $("#result").html(msg);
+                    }, error: function (e) {
+                        alert('Could not connect to web service.');
+                    }
+                });
+            }, 30 * 60 * 1000);
+        }
     </script>
 </head>
 <body>
     <div>
-        <input id="Button1" type="button" value="Send SMS" onclick="sendSMS()" />
+        <input id="Button1" type="button" value="Start Service" onclick="sendSMS()" />
     </div>
     <div id="result"></div>
 </body>

@@ -56,7 +56,6 @@ namespace SMSProject
                         var response = request.GetResponse();
                         messagesSent++;
                     }
-
                         /*    
                             using (SqlCommand command = new SqlCommand("set IDENTITY_INSERT dbo.Log on; insert into Log(id, user_id, page, function_query, error, note, datestamp) VALUES(@id, @user_id, @page, @function_query, @error, @note, @datestamp); set IDENTITY_INSERT dbo.Log off;", sqlCon))
                             {
