@@ -36,7 +36,7 @@ namespace SMSProject
                                                combined_entry => combined_entry.farm_cows.AspNetUser_ID,
                                                asp_users => asp_users.Id,
                                                (combined_entry, asp_users) => new {
-                                                   userID = asp_users.Id,
+                                                   username = asp_users.UserName,
                                                    msgID = combined_entry.z_alerts.id,
                                                    msg = combined_entry.z_alerts.message,
                                                    date = combined_entry.z_alerts.date_emailsent,
@@ -65,9 +65,9 @@ namespace SMSProject
                         logEntries.Add(new Log
                         {
                              id = row.msgID,
-                             user_id = row.userID,
-                             page = "/SMSProject/db.asmx/SendAlerts",
-                             function_query = "insert into log(id, user_id, page, function_query, error, note, datestamp) VALUES(@id, @user_id, @page, @function_query, @error, @note, @datestamp)",
+                             user_id = row.username,
+                             page = HttpContext.Current.Request.Url.AbsoluteUri,
+                             function_query = "SMSService",
                              error = response.StatusCode.ToString(),
                              note = "message:\'" + row.msg + note,
                              datestamp = DateTime.Now
