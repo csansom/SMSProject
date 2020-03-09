@@ -67,7 +67,7 @@ namespace SMSProject
                              id = row.msgID,
                              user_id = row.username,
                              page = HttpContext.Current.Request.Url.AbsoluteUri,
-                             function_query = "SMSService",
+                             function_query = "SendAlerts",
                              error = response.StatusCode.ToString(),
                              note = "message:\'" + row.msg + note,
                              datestamp = DateTime.Now
