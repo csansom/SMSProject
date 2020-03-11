@@ -18,7 +18,7 @@ namespace SMSProject
     [System.ComponentModel.ToolboxItem(false)]
     [System.Web.Script.Services.ScriptService]
     // To allow this Web Service to be called from script, using ASP.NET AJAX, uncomment the following line. 
-    // [System.Web.Script.Services.ScriptService]
+    // [System.Web.Script.Services.ScriptService
     public class db : System.Web.Services.WebService
     {
 
@@ -48,10 +48,12 @@ namespace SMSProject
                 {
                     if (DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddMinutes(-30)) >= 0)
                     {
+                        string message = row.msg.Replace(';', ',');
+
                         // Fill in these feilds.
-                        string login = "your SMS Feedback login";
-                        string password = "your SMS Feedback password";
-                        string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + row.msg;
+                        string login = "csansom";
+                        string password = "b8f26140e4837dc4bba68ded9504a7f3";
+                        string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + "14168753761"/*row.phoneNumber*/ + "&text=" + message;
 
                         HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                         request.Method = "GET";
@@ -64,13 +66,13 @@ namespace SMSProject
                         }
                         logEntries.Add(new Log
                         {
-                             id = row.msgID,
-                             user_id = row.username,
-                             page = HttpContext.Current.Request.Url.AbsoluteUri,
-                             function_query = "SendAlerts",
-                             error = response.StatusCode.ToString(),
-                             note = "message:\'" + row.msg + note,
-                             datestamp = DateTime.Now
+                            id = row.msgID,
+                            user_id = row.username,
+                            page = HttpContext.Current.Request.Url.AbsoluteUri,
+                            function_query = "SendAlerts",
+                            error = response.StatusCode.ToString(),
+                            note = "message:\'" + message + note,
+                            datestamp = DateTime.Now
                         });
                     }
                 }
