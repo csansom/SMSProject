@@ -53,7 +53,7 @@ namespace SMSProject
                         // Fill in these feilds.
                         string login = "your SMS Feedback username";
                         string password = "your SMS Feedback password";
-                        string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + "14168753761"/*row.phoneNumber*/ + "&text=" + message;
+                        string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
 
                         HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                         request.Method = "GET";
