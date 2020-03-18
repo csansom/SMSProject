@@ -37,11 +37,10 @@ namespace SMSProject
                                                asp_users => asp_users.Id,
                                                (combined_entry, asp_users) => new {
                                                    username = asp_users.UserName,
-                                                   msgID = combined_entry.z_alerts.id,
                                                    msg = combined_entry.z_alerts.message,
                                                    date = combined_entry.z_alerts.date_emailsent,
                                                    phoneNumber = asp_users.PhoneNumber
-                                               });
+                                               }).Distinct();
                 int messagesSent = 0;
                 List<Log> logEntries = new List<Log>();
                 foreach (var row in rows)
@@ -50,30 +49,30 @@ namespace SMSProject
                     {
                         string message = row.msg.Replace(';', ',');
 
-                        // Fill in these feilds.
-                        string login = "your SMS Feedback username";
-                        string password = "your SMS Feedback password";
-                        string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
+                             // Fill in these feilds.
+                             string login = "your SMS Feedback login";
+                             string password = "your SMS Feedback password";
+                             string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
 
-                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                        request.Method = "GET";
-                        var response = (HttpWebResponse)request.GetResponse();
-                        string note = "\' encountered an error while sending.";
-                        if (response.StatusCode.ToString().Equals("OK"))
-                        {
-                            messagesSent++;
-                            note = "\' has been sent.";
-                        }
-                        logEntries.Add(new Log
-                        {
-                            id = row.msgID,
-                            user_id = row.username,
-                            page = HttpContext.Current.Request.Url.AbsoluteUri,
-                            function_query = "SendAlerts",
-                            error = response.StatusCode.ToString(),
-                            note = "message:\'" + message + note,
-                            datestamp = DateTime.Now
-                        });
+                             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                             request.Method = "GET";
+                             var response = (HttpWebResponse)request.GetResponse();
+                             string note = "\' encountered an error while sending.";
+
+                             if (response.StatusCode.ToString().Equals("OK"))
+                             {
+                                 messagesSent++;
+                                 note = "\' has been sent.";
+                             }
+                             logEntries.Add(new Log
+                             {
+                                 user_id = row.username,
+                                 page = HttpContext.Current.Request.Url.AbsoluteUri,
+                                 function_query = "SendAlerts",
+                                 error = response.StatusCode.ToString(),
+                                 note = "message:\'" + message + note,
+                                 datestamp = DateTime.Now
+                             });
                     }
                 }
                 foreach (Log logRow in logEntries)

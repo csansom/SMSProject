@@ -1,0 +1,29 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body onload="sendSMS()">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script>
+        var sendSMS = function sendSMS() {
+            var now = new Date();
+            var timestamp = new Date(now.getTime() + 30 * 60 * 1000);
+            $("#result").html("Will check for alerts at " + timestamp + ".");
+            setInterval(function () {
+                $.ajax({
+                    type: "POST",
+                    url: 'http://localhost/SMSProject/db.asmx/SendAlerts',
+                    success: function (msg) {
+                        $("#result").html(msg);
+                    }, error: function (e) {
+                        alert('Could not connect to web service.');
+                    }
+                });
+            }, 30 * 60 * 1000);
+        }
+    </script>
+    <div id="result"></div>
+</body>
+</html>
