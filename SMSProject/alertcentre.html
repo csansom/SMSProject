@@ -4,26 +4,80 @@
     <meta charset="utf-8" />
     <title></title>
 </head>
-<body onload="sendSMS()">
+<body>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script>
-        var sendSMS = function sendSMS() {
-            var now = new Date();
-            var timestamp = new Date(now.getTime() + 30 * 60 * 1000);
-            $("#result").html("Will check for alerts at " + timestamp + ".");
-            setInterval(function () {
-                $.ajax({
-                    type: "POST",
-                    url: 'http://localhost/SMSProject/db.asmx/SendAlerts',
-                    success: function (msg) {
-                        $("#result").html(msg);
-                    }, error: function (e) {
-                        alert('Could not connect to web service.');
-                    }
-                });
-            }, 30 * 60 * 1000);
+        var getStats = function getStats() {
+            $.ajax({
+                type: "POST",
+                url: 'http://localhost/SMSProject/db.asmx/GetStats',
+                success: function (result) {
+                    var stats = result.split(";");
+                    $("#30min").html(stats[0]);
+                    $("#24hr").html(stats[1]);
+                    $("#7day").html(stats[2]);
+                    $("#30day").html(stats[3]);
+                    $("#alltime").html(stats[4]);
+                }, error: function (e) {
+                    alert('Could not connect to web service.');
+                }
+            });
         }
+        var getUsers = function getUsers() {
+            $.ajax({
+                type: "POST",
+                url: 'http://localhost/SMSProject/db.asmx/GetUsers',
+                success: function (result) {
+                    var select = document.getElementById("users");
+                    var users = result.split(";");
+                    for (var i = 0; i < users.length - 1; i++) {
+                        var user = users[i];
+                        select.options[i+1] = new Option(users[i], users[i])
+                    }
+                }, error: function (e) {
+                    alert('Could not connect to web service.');
+                }
+            });
+        }
+
+        $( document ).ready(function () {
+            getUsers();
+            getStats();
+            setInterval(getStats(), 30 * 60 * 1000);
+        })
     </script>
-    <div id="result"></div>
+    <h3 id="header">Alerts sent:</h3>
+    <table style="width:30%">
+        <tr>
+            <td>In the last 30 minuts</td>
+            <td id="30min"></td>
+        </tr>
+        <tr>
+            <td>In the last 24 hours</td>
+            <td id="24hr"></td>
+        </tr>
+        <tr>
+            <td>In the last 7 days</td>
+            <td id="7day"></td>
+        </tr>
+        <tr>
+            <td>In the last 30 days</td>
+            <td id="30day"></td>
+        </tr>
+        <tr>
+            <td>All time</td>
+            <td id="alltime"></td>
+        </tr>
+    </table>
+    <br />
+    <h4>Update user phone numbers:</h4>
+    <div>
+        <select id="users">
+            <option value="select">--Select--</option>
+        </select>
+        <input id="newNumber" type="text" />
+        <input id="updateButton" type="button" value="Change Number" />
+    </div>
+    <div id="message"></div>
 </body>
 </html>

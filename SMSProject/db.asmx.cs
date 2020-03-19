@@ -1,10 +1,13 @@
-﻿using System;
+﻿using RestSharp;
+using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Entity.Core.Objects;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Net;
 using System.Web;
+using System.Web.Mvc;
 using System.Web.Script.Services;
 using System.Web.Services;
 
@@ -50,8 +53,8 @@ namespace SMSProject
                         string message = row.msg.Replace(';', ',');
 
                              // Fill in these feilds.
-                             string login = "your SMS Feedback login";
-                             string password = "your SMS Feedback password";
+                             string login = "csansom";
+                             string password = "b8f26140e4837dc4bba68ded9504a7f3";
                              string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
 
                              HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
@@ -85,5 +88,44 @@ namespace SMSProject
             Context.Response.End();
             return string.Empty;
         }
+
+        [WebMethod]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public string GetStats()
+        {
+            using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
+            {
+                var timeMinusThirtyMinutes = DateTime.Now.AddMinutes(-30);
+                var lastHalfHour = db.Logs.Where(l => l.datestamp >= timeMinusThirtyMinutes).Select(l => l.id).Count();
+                var lastDay = db.Logs.Where(l => l.datestamp >= DateTime.Today).Select(l => l.id).Count();
+                var lastWeek = db.Logs.Where(l => l.datestamp >= EntityFunctions.AddDays(DateTime.Today, -7)).Select(l => l.id).Count();
+                var lastMonth = db.Logs.Where(l => l.datestamp >= EntityFunctions.AddDays(DateTime.Today, -30)).Select(l => l.id).Count();
+                var allTime = db.Logs.Select(l => l.id).Count();
+
+                string stats = lastHalfHour.ToString() + ";" + lastDay.ToString() + ";" + lastWeek.ToString() + ";" + lastMonth.ToString() + ";" + allTime.ToString();
+                Context.Response.Output.WriteLine(stats);
+            }
+            Context.Response.End();
+            return string.Empty;
+        }
+
+        [WebMethod]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public string GetUsers()
+        {
+            using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
+            {
+                string response = "";
+                var users = db.AspNetUsers.Select(u => new { u.UserName, u.PhoneNumber });
+                foreach (var user in users)
+                {
+                    response = response + user.UserName + " (" + user.PhoneNumber + ");";
+                }
+                Context.Response.Output.WriteLine(response);
+            }
+            Context.Response.End();
+            return string.Empty;
+        }
+
     }
 }
