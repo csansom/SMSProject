@@ -1,6 +1,7 @@
 ﻿using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Data.Entity.Core.Objects;
 using System.Data.SqlClient;
@@ -24,66 +25,87 @@ namespace SMSProject
     // [System.Web.Script.Services.ScriptService
     public class db : System.Web.Services.WebService
     {
+        [WebMethod]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public string EnableDisable()
+        {
+            var sendSMS = Boolean.Parse(ConfigurationManager.AppSettings["sendSMS"]);
+            sendSMS = !sendSMS;
+            ConfigurationManager.AppSettings["sendSMS"] = sendSMS.ToString();
+            if (sendSMS)
+                Context.Response.Output.WriteLine("Disable SMS Service");
+            else
+                Context.Response.Output.WriteLine("Enable SMS Service");
+            Context.Response.End();
+            return string.Empty;
+        }
 
         [WebMethod]
         [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
         public string SendAlerts()
         {
-            using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
+            if (Boolean.Parse(ConfigurationManager.AppSettings["sendSMS"]))
             {
-                var rows = db.Z_AlertLogs.Join(db.FarmCows,
-                                               z_alerts => z_alerts.bolus_id,
-                                               farm_cows => farm_cows.Bolus_ID,
-                                               (z_alerts, farm_cows) => new { z_alerts, farm_cows })
-                                               .Join(db.AspNetUsers,
-                                               combined_entry => combined_entry.farm_cows.AspNetUser_ID,
-                                               asp_users => asp_users.Id,
-                                               (combined_entry, asp_users) => new {
-                                                   username = asp_users.UserName,
-                                                   msg = combined_entry.z_alerts.message,
-                                                   date = combined_entry.z_alerts.date_emailsent,
-                                                   phoneNumber = asp_users.PhoneNumber
-                                               }).Distinct();
-                int messagesSent = 0;
-                List<Log> logEntries = new List<Log>();
-                foreach (var row in rows)
+                using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
                 {
-                    if (DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddMinutes(-30)) >= 0)
+                    var rows = db.Z_AlertLogs.Join(db.FarmCows,
+                                                   z_alerts => z_alerts.bolus_id,
+                                                   farm_cows => farm_cows.Bolus_ID,
+                                                   (z_alerts, farm_cows) => new { z_alerts, farm_cows })
+                                                   .Join(db.AspNetUsers,
+                                                   combined_entry => combined_entry.farm_cows.AspNetUser_ID,
+                                                   asp_users => asp_users.Id,
+                                                   (combined_entry, asp_users) => new
+                                                   {
+                                                       username = asp_users.UserName,
+                                                       msg = combined_entry.z_alerts.message,
+                                                       date = combined_entry.z_alerts.date_emailsent,
+                                                       phoneNumber = asp_users.PhoneNumber
+                                                   }).Distinct();
+                    int messagesSent = 0;
+                    List<Log> logEntries = new List<Log>();
+                    foreach (var row in rows)
                     {
-                        string message = row.msg.Replace(';', ',');
+                        if (DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddMinutes(-30)) >= 0)
+                        {
+                            string message = row.msg.Replace(';', ',');
 
-                             // Fill in these feilds.
-                             string login = "csansom";
-                             string password = "b8f26140e4837dc4bba68ded9504a7f3";
-                             string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
+                            // Fill in these feilds.
+                            string login = "csansom";
+                            string password = "b8f26140e4837dc4bba68ded9504a7f3";
+                            string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
 
-                             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                             request.Method = "GET";
-                             var response = (HttpWebResponse)request.GetResponse();
-                             string note = "\' encountered an error while sending.";
+                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                            request.Method = "GET";
+                            var response = (HttpWebResponse)request.GetResponse();
+                            string note = "\' encountered an error while sending.";
 
-                             if (response.StatusCode.ToString().Equals("OK"))
-                             {
-                                 messagesSent++;
-                                 note = "\' has been sent.";
-                             }
-                             logEntries.Add(new Log
-                             {
-                                 user_id = row.username,
-                                 page = HttpContext.Current.Request.Url.AbsoluteUri,
-                                 function_query = "SendAlerts",
-                                 error = response.StatusCode.ToString(),
-                                 note = "message:\'" + message + note,
-                                 datestamp = DateTime.Now
-                             });
+                            if (response.StatusCode.ToString().Equals("OK"))
+                            {
+                                messagesSent++;
+                                note = "\' has been sent.";
+                            }
+                            logEntries.Add(new Log
+                            {
+                                user_id = row.username,
+                                page = HttpContext.Current.Request.Url.AbsoluteUri,
+                                function_query = "SendAlerts",
+                                error = response.StatusCode.ToString(),
+                                note = "message:\'" + message + note,
+                                datestamp = DateTime.Now
+                            });
+                        }
                     }
+                    foreach (Log logRow in logEntries)
+                    {
+                        db.Logs.Add(logRow);
+                        db.SaveChanges();
+                    }
+                    Context.Response.Output.WriteLine(messagesSent + " alert(s) were sent at " + DateTime.Now.ToString() + ".");
                 }
-                foreach (Log logRow in logEntries)
-                {
-                    db.Logs.Add(logRow);
-                    db.SaveChanges();
-                }
-                Context.Response.Output.WriteLine(messagesSent + " alert(s) were sent at " + DateTime.Now.ToString() + ".");
+            } else
+            {
+                Context.Response.Output.WriteLine("SMS Service is currently disabled.");
             }
             Context.Response.End();
             return string.Empty;
@@ -96,10 +118,12 @@ namespace SMSProject
             using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
             {
                 var timeMinusThirtyMinutes = DateTime.Now.AddMinutes(-30);
+                var sevenDaysAgo = DateTime.Today.AddDays(-7);
+                var thirtyDaysAgo = DateTime.Today.AddDays(-30);
                 var lastHalfHour = db.Logs.Where(l => l.datestamp >= timeMinusThirtyMinutes).Select(l => l.id).Count();
                 var lastDay = db.Logs.Where(l => l.datestamp >= DateTime.Today).Select(l => l.id).Count();
-                var lastWeek = db.Logs.Where(l => l.datestamp >= EntityFunctions.AddDays(DateTime.Today, -7)).Select(l => l.id).Count();
-                var lastMonth = db.Logs.Where(l => l.datestamp >= EntityFunctions.AddDays(DateTime.Today, -30)).Select(l => l.id).Count();
+                var lastWeek = db.Logs.Where(l => l.datestamp >= sevenDaysAgo).Select(l => l.id).Count();
+                var lastMonth = db.Logs.Where(l => l.datestamp >= thirtyDaysAgo).Select(l => l.id).Count();
                 var allTime = db.Logs.Select(l => l.id).Count();
 
                 string stats = lastHalfHour.ToString() + ";" + lastDay.ToString() + ";" + lastWeek.ToString() + ";" + lastMonth.ToString() + ";" + allTime.ToString();

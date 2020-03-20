@@ -6,26 +6,40 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script>
         var sendSMS = function sendSMS() {
-            var now = new Date();
-            var timestamp = new Date(now.getTime() + 30 * 60 * 1000);
-            $("#result").html("Will check for alerts at " + timestamp + ".");
-            setInterval(function () {
-                $.ajax({
-                    type: "POST",
-                    url: 'http://localhost/SMSProject/db.asmx/SendAlerts',
-                    success: function (msg) {
-                        $("#result").html(msg);
-                    }, error: function (e) {
-                        alert('Could not connect to web service.');
-                    }
-                });
-            }, 30 * 60 * 1000);
+            $("#result").html("Checking for alerts...");
+            $.ajax({
+                type: "POST",
+                url: 'http://localhost/SMSProject/db.asmx/SendAlerts',
+                success: function (msg) {
+                    $("#result").html(msg);
+                }, error: function (e) {
+                    alert('Could not connect to web service.');
+                }
+            });
         }
+
+        var startService = function startService() {
+            sendSMS();
+            setInterval(function () { sendSMS() }, 30 * 60 * 1000);
+        }
+
+        var enable_disable = function enable_disable() {
+            $.ajax({
+                type: "POST",
+                url: 'http://localhost/SMSProject/db.asmx/EnableDisable',
+                success: function (msg) {
+                    document.getElementById("enable_button").value = msg;
+                }, error: function (e) {
+                    alert('Could not connect to web service.');
+                }
+            });
+        }
+
     </script>
 </head>
-<body>
+<body onload="startService()">
     <div>
-        <input id="Button1" type="button" value="Start Service" onclick="sendSMS()" />
+        <input id="enable_button" type="button" value="Disable SMS Service" onclick="enable_disable()" />
     </div>
     <div id="result"></div>
 </body>
