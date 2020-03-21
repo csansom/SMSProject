@@ -8,6 +8,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Net;
 using System.Web;
+using System.Web.Http;
 using System.Web.Mvc;
 using System.Web.Script.Services;
 using System.Web.Services;
@@ -17,7 +18,7 @@ namespace SMSProject
     /// <summary>
     /// Summary description for db
     /// </summary>
-    [WebService(Namespace = "http://localhost/SMSProject/")]
+    [WebService(Namespace = "http://cattleman-001-site1.itempurl.com/SMSservice/")]
     [WebServiceBinding(ConformsTo = WsiProfiles.BasicProfile1_1)]
     [System.ComponentModel.ToolboxItem(false)]
     [System.Web.Script.Services.ScriptService]
@@ -71,8 +72,8 @@ namespace SMSProject
                             string message = row.msg.Replace(';', ',');
 
                             // Fill in these feilds.
-                            string login = "csansom";
-                            string password = "b8f26140e4837dc4bba68ded9504a7f3";
+                            string login = "username";
+                            string password = "password";
                             string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
 
                             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
@@ -151,5 +152,26 @@ namespace SMSProject
             return string.Empty;
         }
 
+        [WebMethod]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public string ChangeNumber([FromBody] UpdateNumberData data)
+        {
+            using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
+            {
+                var user = db.AspNetUsers.SingleOrDefault(u => u.UserName == data.username);
+                user.PhoneNumber = data.phoneNumber;
+                db.SaveChanges();
+                string response = user.UserName + " (" + user.PhoneNumber + ");";
+                Context.Response.Output.WriteLine(response);
+            }
+            Context.Response.End();
+            return string.Empty;
+        }
+    }
+
+    public class UpdateNumberData
+    {
+        public string username;
+        public string phoneNumber;
     }
 }

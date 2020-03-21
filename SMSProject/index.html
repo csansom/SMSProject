@@ -9,7 +9,7 @@
             $("#result").html("Checking for alerts...");
             $.ajax({
                 type: "POST",
-                url: 'http://localhost/SMSProject/db.asmx/SendAlerts',
+                url: 'http://cattleman-001-site1.itempurl.com/SMSservice/db.asmx/SendAlerts',
                 success: function (msg) {
                     $("#result").html(msg);
                 }, error: function (e) {
@@ -26,7 +26,7 @@
         var enable_disable = function enable_disable() {
             $.ajax({
                 type: "POST",
-                url: 'http://localhost/SMSProject/db.asmx/EnableDisable',
+                url: 'http://cattleman-001-site1.itempurl.com/SMSservice/db.asmx/EnableDisable',
                 success: function (msg) {
                     document.getElementById("enable_button").value = msg;
                 }, error: function (e) {

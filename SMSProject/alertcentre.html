@@ -10,7 +10,7 @@
         var getStats = function getStats() {
             $.ajax({
                 type: "POST",
-                url: 'http://localhost/SMSProject/db.asmx/GetStats',
+                url: 'http://cattleman-001-site1.itempurl.com/SMSservice/db.asmx/GetStats',
                 success: function (result) {
                     var stats = result.split(";");
                     $("#30min").html(stats[0]);
@@ -26,7 +26,7 @@
         var getUsers = function getUsers() {
             $.ajax({
                 type: "POST",
-                url: 'http://localhost/SMSProject/db.asmx/GetUsers',
+                url: 'http://cattleman-001-site1.itempurl.com/SMSservice/db.asmx/GetUsers',
                 success: function (result) {
                     var select = document.getElementById("users");
                     var users = result.split(";");
@@ -34,6 +34,25 @@
                         var user = users[i];
                         select.options[i+1] = new Option(users[i], users[i])
                     }
+                }, error: function (e) {
+                    alert('Could not connect to web service.');
+                }
+            });
+        }
+
+        var updateNumber = function updateNumber() {
+            var select = document.getElementById("users");
+            var numberFeild = document.getElementById("newNumber")
+            var username = select.options[select.selectedIndex];
+            var newNumber = numberFeild.value;
+            $.ajax({
+                type: "POST",
+                url: 'http://cattleman-001-site1.itempurl.com/SMSservice/db.asmx/ChangeNumber',
+                data: JSON.stringify({ username: username, phoneNumber: newNumber }),
+                contentType: 'application/json; charset=utf-8',
+                success: function (result) {
+                    select.options[select.selectedIndex] = new Option(result, result)
+                    $("#message").val("Phone number updated.")
                 }, error: function (e) {
                     alert('Could not connect to web service.');
                 }
@@ -76,7 +95,7 @@
             <option value="select">--Select--</option>
         </select>
         <input id="newNumber" type="text" />
-        <input id="updateButton" type="button" value="Change Number" />
+        <input id="updateButton" type="button" value="Change Number" onclick="updateNumber()"/>
     </div>
     <div id="message"></div>
 </body>
