@@ -34,9 +34,13 @@ namespace SMSProject
             sendSMS = !sendSMS;
             ConfigurationManager.AppSettings["sendSMS"] = sendSMS.ToString();
             if (sendSMS)
+            {
                 Context.Response.Output.WriteLine("Disable SMS Service");
+            }
             else
+            {
                 Context.Response.Output.WriteLine("Enable SMS Service");
+            }
             Context.Response.End();
             return string.Empty;
         }
@@ -93,7 +97,8 @@ namespace SMSProject
                                 function_query = "SendAlerts",
                                 error = response.StatusCode.ToString(),
                                 note = "message:\'" + message + note,
-                                datestamp = DateTime.Now
+                                datestamp = DateTime.Now,
+                                recipient = row.phoneNumber
                             });
                         }
                     }
@@ -171,7 +176,7 @@ namespace SMSProject
 
     public class UpdateNumberData
     {
-        public string username;
-        public string phoneNumber;
+        public string username { get; set; }
+        public string phoneNumber { get; set; }
     }
 }

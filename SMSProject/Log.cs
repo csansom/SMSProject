@@ -20,6 +20,7 @@ namespace SMSProject
         public string function_query { get; set; }
         public string error { get; set; }
         public string note { get; set; }
+        public string recipient { get; set; }
         public Nullable<System.DateTime> datestamp { get; set; }
     }
 }
