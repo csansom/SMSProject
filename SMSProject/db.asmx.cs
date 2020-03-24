@@ -30,18 +30,38 @@ namespace SMSProject
         [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
         public string EnableDisable()
         {
-            var sendSMS = Boolean.Parse(ConfigurationManager.AppSettings["sendSMS"]);
-            sendSMS = !sendSMS;
-            ConfigurationManager.AppSettings["sendSMS"] = sendSMS.ToString();
-            if (sendSMS)
+            using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
             {
-                Context.Response.Output.WriteLine("Disable SMS Service");
+                var functionQuery = "";
+                var note = "";
+                var sendSMS = Boolean.Parse(ConfigurationManager.AppSettings["sendSMS"]);
+                sendSMS = !sendSMS;
+                ConfigurationManager.AppSettings["sendSMS"] = sendSMS.ToString();
+                if (sendSMS)
+                {
+                    Context.Response.Output.WriteLine("Disable SMS Service");
+                    functionQuery = "Enable";
+                    note = "Service Enabled at " + DateTime.Now;
+                }
+                else
+                {
+                    Context.Response.Output.WriteLine("Enable SMS Service");
+                    functionQuery = "Disable";
+                    note = "Service Disabled at " + DateTime.Now;
+                }
+                db.Logs.Add(new Log
+                {
+                    user_id = null,
+                    page = HttpContext.Current.Request.Url.AbsoluteUri,
+                    function_query = functionQuery,
+                    error = null,
+                    note = note,
+                    datestamp = DateTime.Now,
+                    recipient = null
+                });
+                db.SaveChanges();
+                Context.Response.End();
             }
-            else
-            {
-                Context.Response.Output.WriteLine("Enable SMS Service");
-            }
-            Context.Response.End();
             return string.Empty;
         }
 
@@ -53,6 +73,19 @@ namespace SMSProject
             {
                 using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
                 {
+
+                    db.Logs.Add(new Log
+                    {
+                        user_id = null,
+                        page = HttpContext.Current.Request.Url.AbsoluteUri,
+                        function_query = "Start SendAlerts",
+                        error = null,
+                        note = "Service Started at " + DateTime.Now,
+                        datestamp = DateTime.Now,
+                        recipient = null
+                    });
+                    db.SaveChanges();
+
                     var rows = db.Z_AlertLogs.Join(db.FarmCows,
                                                    z_alerts => z_alerts.bolus_id,
                                                    farm_cows => farm_cows.Bolus_ID,
@@ -76,7 +109,7 @@ namespace SMSProject
                             string message = row.msg.Replace(';', ',');
 
                             // Fill in these feilds.
-                            string login = "username";
+                            string login = "login";
                             string password = "password";
                             string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
 
@@ -108,6 +141,17 @@ namespace SMSProject
                         db.SaveChanges();
                     }
                     Context.Response.Output.WriteLine(messagesSent + " alert(s) were sent at " + DateTime.Now.ToString() + ".");
+                    db.Logs.Add(new Log
+                    {
+                        user_id = null,
+                        page = HttpContext.Current.Request.Url.AbsoluteUri,
+                        function_query = "End SendAlerts",
+                        error = null,
+                        note = "Service Finished at " + DateTime.Now,
+                        datestamp = DateTime.Now,
+                        recipient = null
+                    });
+                    db.SaveChanges();
                 }
             } else
             {

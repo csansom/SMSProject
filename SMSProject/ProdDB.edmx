@@ -4,7 +4,7 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-      <Schema Namespace="DB_A4A060_csModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+    <Schema Namespace="DB_A4A060_csModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
         <EntityType Name="__MigrationHistory">
           <Key>
             <PropertyRef Name="MigrationId" />
@@ -134,6 +134,7 @@ warning 6002: The table/view 'DB_A4A060_cs.dbo.datagapstab' does not have a prim
           <Property Name="error" Type="nvarchar" MaxLength="300" />
           <Property Name="note" Type="nvarchar" MaxLength="300" />
           <Property Name="datestamp" Type="datetime2" Precision="7" />
+          <Property Name="recipient" Type="nvarchar" MaxLength="20" />
         </EntityType>
         <EntityType Name="MeasData">
           <Key>
@@ -290,8 +291,7 @@ warning 6002: The table/view 'DB_A4A060_cs.dbo.datagapstab' does not have a prim
             <End Role="AspNetUserRoles" EntitySet="AspNetUserRoles" />
           </AssociationSet>
         </EntityContainer>
-      </Schema>
-    </edmx:StorageModels>
+      </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="DB_A4A060_csModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
@@ -411,6 +411,7 @@ warning 6002: The table/view 'DB_A4A060_cs.dbo.datagapstab' does not have a prim
           <Property Name="error" Type="String" MaxLength="300" FixedLength="false" Unicode="true" />
           <Property Name="note" Type="String" MaxLength="300" FixedLength="false" Unicode="true" />
           <Property Name="datestamp" Type="DateTime" Precision="7" />
+          <Property Name="recipient" Type="String" MaxLength="20" FixedLength="false" Unicode="true" />
         </EntityType>
         <EntityType Name="MeasData">
           <Key>
@@ -655,6 +656,7 @@ warning 6002: The table/view 'DB_A4A060_cs.dbo.datagapstab' does not have a prim
           <EntitySetMapping Name="Logs">
             <EntityTypeMapping TypeName="DB_A4A060_csModel.Log">
               <MappingFragment StoreEntitySet="Log">
+                <ScalarProperty Name="recipient" ColumnName="recipient" />
                 <ScalarProperty Name="id" ColumnName="id" />
                 <ScalarProperty Name="user_id" ColumnName="user_id" />
                 <ScalarProperty Name="page" ColumnName="page" />

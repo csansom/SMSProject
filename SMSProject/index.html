@@ -11,7 +11,7 @@
                 type: "POST",
                 url: 'http://cattleman-001-site1.itempurl.com/SMSservice/db.asmx/SendAlerts',
                 success: function (msg) {
-       //             $("#result").html(msg);
+                    $("#result").html(msg);
                 }, error: function (e) {
                     alert('Could not connect to web service.');
                 }
