@@ -1,4 +1,5 @@
-﻿using RestSharp;
+﻿using Newtonsoft.Json.Linq;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -12,6 +13,7 @@ using System.Web.Http;
 using System.Web.Mvc;
 using System.Web.Script.Services;
 using System.Web.Services;
+using HttpPostAttribute = System.Web.Http.HttpPostAttribute;
 
 namespace SMSProject
 {
@@ -203,14 +205,15 @@ namespace SMSProject
 
         [WebMethod]
         [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
-        public string ChangeNumber([FromBody] UpdateNumberData data)
+        public string SetNewNumber(string NameAndNumber, string PhoneNumber)
         {
             using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
             {
-                var user = db.AspNetUsers.SingleOrDefault(u => u.UserName == data.username);
-                user.PhoneNumber = data.phoneNumber;
+                var username = NameAndNumber.Split(' ')[0];
+                var user = db.AspNetUsers.SingleOrDefault(u => u.UserName == username);
+                user.PhoneNumber = PhoneNumber;
                 db.SaveChanges();
-                string response = user.UserName + " (" + user.PhoneNumber + ");";
+                string response = user.UserName + " (" + user.PhoneNumber + ")";
                 Context.Response.Output.WriteLine(response);
             }
             Context.Response.End();
