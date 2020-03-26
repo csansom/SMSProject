@@ -3,9 +3,10 @@
 <head>
     <meta charset="utf-8" />
     <title></title>
-</head>
-<body>
+    <link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/19.2.6/css/dx.common.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/19.2.6/css/dx.light.css" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdn3.devexpress.com/jslib/19.2.6/js/dx.all.js"></script>
     <script>
         var getStats = function getStats() {
             $.ajax({
@@ -32,7 +33,7 @@
                     var users = result.split(";");
                     for (var i = 0; i < users.length - 1; i++) {
                         var user = users[i];
-                        select.options[i+1] = new Option(users[i], users[i])
+                        select.options[i + 1] = new Option(users[i], users[i])
                     }
                 }, error: function (e) {
                     alert('Could not connect to web service.');
@@ -64,16 +65,50 @@
             });
         }
 
-        $( document ).ready(function () {
+        var getLog = function getLog() {
+            $.ajax({
+                type: "POST",
+                url: 'http://cattleman-001-site1.itempurl.com/SMSservice/db.asmx/GetGridEntires',
+                success: function (result) {
+                    $("#grid").dxDataGrid({
+                       dataSource: result,
+                        showBorders: true,
+                        paging: {
+                            pageSize: 10
+                        },
+                        pager: {
+                            showPageSizeSelector: true,
+                            allowedPageSizes: [5, 10, 20],
+                            showInfo: true
+                        },
+                        columns: ["Name", "BolusID", "Event", "Message", "Date", "Email"]
+                    });
+                }, error: function (e) {
+                    alert('Could not connect to web service.');
+                }
+            });
+        }
+
+        $(document).ready(function () {
             getUsers();
             getStats();
+            getLog();
             setInterval(getStats(), 30 * 60 * 1000);
         })
     </script>
-    <div id="PanelSWhow">
-        <div id="adminAlertsList">
-            <div class="row" style="text-align: center; padding: 10px 0; border-width: thin; background-color: #e6f0ff;">
-                <h3>Alerts List</h3>
+</head>
+<body>
+    <div class="container">
+        <div id="PanelSWhow">
+            <div id="adminAlertsList">
+                <div class="row" style="text-align: center; padding: 10px 0; border-width: thin; background-color: #e6f0ff;">
+                    <h3>Alerts List</h3>
+                </div>
+                <div class="dx-viewport">
+                    <div class="demo-container">
+                        <div id="grid" class="dx-widget dx-visibility-change-handler" role="presentation"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

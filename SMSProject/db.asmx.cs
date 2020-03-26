@@ -111,8 +111,8 @@ namespace SMSProject
                             string message = row.msg.Replace(';', ',');
 
                             // Fill in these feilds.
-                            string login = "login";
-                            string password = "password";
+                            string login = "";
+                            string password = "";
                             string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
 
                             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
@@ -172,11 +172,11 @@ namespace SMSProject
                 var timeMinusThirtyMinutes = DateTime.Now.AddMinutes(-30);
                 var sevenDaysAgo = DateTime.Today.AddDays(-7);
                 var thirtyDaysAgo = DateTime.Today.AddDays(-30);
-                var lastHalfHour = db.Logs.Where(l => l.datestamp >= timeMinusThirtyMinutes).Select(l => l.id).Count();
-                var lastDay = db.Logs.Where(l => l.datestamp >= DateTime.Today).Select(l => l.id).Count();
-                var lastWeek = db.Logs.Where(l => l.datestamp >= sevenDaysAgo).Select(l => l.id).Count();
-                var lastMonth = db.Logs.Where(l => l.datestamp >= thirtyDaysAgo).Select(l => l.id).Count();
-                var allTime = db.Logs.Select(l => l.id).Count();
+                var lastHalfHour = db.Logs.Where(l => l.datestamp >= timeMinusThirtyMinutes && l.function_query != "Enable" && l.function_query != "Disable").Select(l => l.id).Count();
+                var lastDay = db.Logs.Where(l => l.datestamp >= DateTime.Today && l.function_query != "Enable" && l.function_query != "Disable").Select(l => l.id).Count();
+                var lastWeek = db.Logs.Where(l => l.datestamp >= sevenDaysAgo && l.function_query != "Enable" && l.function_query != "Disable").Select(l => l.id).Count();
+                var lastMonth = db.Logs.Where(l => l.datestamp >= thirtyDaysAgo && l.function_query != "Enable" && l.function_query != "Disable").Select(l => l.id).Count();
+                var allTime = db.Logs.Where(l => l.function_query != "Enable" && l.function_query != "Disable").Select(l => l.id).Count();
 
                 string stats = lastHalfHour.ToString() + ";" + lastDay.ToString() + ";" + lastWeek.ToString() + ";" + lastMonth.ToString() + ";" + allTime.ToString();
                 Context.Response.Output.WriteLine(stats);
@@ -219,11 +219,50 @@ namespace SMSProject
             Context.Response.End();
             return string.Empty;
         }
-    }
 
-    public class UpdateNumberData
-    {
-        public string username { get; set; }
-        public string phoneNumber { get; set; }
+        [WebMethod]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public string GetGridEntires()
+        {
+            using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
+            {
+                Context.Response.Clear();
+                Context.Response.ContentType = "application/json; charset=utf-8";
+                Context.Response.Output.Write("[");
+                var entries = db.Z_AlertLogs.OrderByDescending(x => x.date_emailsent).Join(db.FarmCows,
+                                                   z_alerts => z_alerts.bolus_id,
+                                                   farm_cows => farm_cows.Bolus_ID,
+                                                   (z_alerts, farm_cows) => new { z_alerts, farm_cows })
+                                                   .Join(db.AspNetUsers,
+                                                   combined_entry => combined_entry.farm_cows.AspNetUser_ID,
+                                                   asp_users => asp_users.Id,
+                                                   (combined_entry, asp_users) => new
+                                                   {
+                                                       username = asp_users.UserName,
+                                                       bolusID = combined_entry.z_alerts.bolus_id,
+                                                       ev = combined_entry.z_alerts.@event,
+                                                       msg = combined_entry.z_alerts.message,
+                                                       date = combined_entry.z_alerts.date_emailsent,
+                                                       email = asp_users.Email
+                                                   }).Distinct().Take(300);
+                string response = "";
+                foreach (var entry in entries)
+                {
+                    response = response + "{\"Name\":\"" + entry.username + 
+                        "\",\"BolusID\":\"" + entry.bolusID + 
+                        "\",\"Event\":\"" + entry.ev +
+                        "\",\"Message\":\"" + entry.msg +
+                        "\",\"Date\":\"" + entry.date.ToString() +
+                        "\",\"Email\":\"" + entry.email + "\"},";
+                    
+                }
+                response = response.Remove(response.Length - 1);
+                Context.Response.Output.Write(response);
+                Context.Response.Output.Write("]");
+            }
+            Context.Response.End();
+            return string.Empty;
+        }
+        
     }
 }
