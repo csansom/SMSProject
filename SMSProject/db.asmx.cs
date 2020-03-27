@@ -114,27 +114,42 @@ namespace SMSProject
                             string login = "";
                             string password = "";
                             string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
+                            string errorCode = "";
 
-                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                            request.Method = "GET";
-                            var response = (HttpWebResponse)request.GetResponse();
-                            string note = "\' encountered an error while sending.";
-
-                            if (response.StatusCode.ToString().Equals("OK"))
+                            try
                             {
-                                messagesSent++;
-                                note = "\' has been sent.";
+                                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                                request.Method = "GET";
+                                var response = (HttpWebResponse)request.GetResponse();
+                                errorCode = response.StatusCode.ToString();
+
+                                if (errorCode.Equals("OK"))
+                                    messagesSent++;
+
+                                logEntries.Add(new Log
+                                {
+                                    user_id = row.username,
+                                    page = HttpContext.Current.Request.Url.AbsoluteUri,
+                                    function_query = "SendAlertsError",
+                                    error = response.StatusCode.ToString(),
+                                    note = "message:\'" + message + "\' has been sent",
+                                    datestamp = DateTime.Now,
+                                    recipient = row.phoneNumber
+                                });
                             }
-                            logEntries.Add(new Log
+                            catch (global::System.Exception)
                             {
-                                user_id = row.username,
-                                page = HttpContext.Current.Request.Url.AbsoluteUri,
-                                function_query = "SendAlerts",
-                                error = response.StatusCode.ToString(),
-                                note = "message:\'" + message + note,
-                                datestamp = DateTime.Now,
-                                recipient = row.phoneNumber
-                            });
+                                logEntries.Add(new Log
+                                {
+                                    user_id = row.username,
+                                    page = HttpContext.Current.Request.Url.AbsoluteUri,
+                                    function_query = "SendAlerts",
+                                    error = errorCode,
+                                    note = "message:\'" + message + "\' encountered an error while sending.",
+                                    datestamp = DateTime.Now,
+                                    recipient = row.phoneNumber
+                                });
+                            }
                         }
                     }
                     foreach (Log logRow in logEntries)
@@ -172,11 +187,11 @@ namespace SMSProject
                 var timeMinusThirtyMinutes = DateTime.Now.AddMinutes(-30);
                 var sevenDaysAgo = DateTime.Today.AddDays(-7);
                 var thirtyDaysAgo = DateTime.Today.AddDays(-30);
-                var lastHalfHour = db.Logs.Where(l => l.datestamp >= timeMinusThirtyMinutes && l.function_query != "Enable" && l.function_query != "Disable").Select(l => l.id).Count();
-                var lastDay = db.Logs.Where(l => l.datestamp >= DateTime.Today && l.function_query != "Enable" && l.function_query != "Disable").Select(l => l.id).Count();
-                var lastWeek = db.Logs.Where(l => l.datestamp >= sevenDaysAgo && l.function_query != "Enable" && l.function_query != "Disable").Select(l => l.id).Count();
-                var lastMonth = db.Logs.Where(l => l.datestamp >= thirtyDaysAgo && l.function_query != "Enable" && l.function_query != "Disable").Select(l => l.id).Count();
-                var allTime = db.Logs.Where(l => l.function_query != "Enable" && l.function_query != "Disable").Select(l => l.id).Count();
+                var lastHalfHour = db.Logs.Where(l => l.datestamp >= timeMinusThirtyMinutes && l.function_query != "SendAlertsError" && l.function_query != "Enable" && l.function_query != "Disable" && l.function_query != "Start SendAlerts" && l.function_query != "End SendAlerts").Select(l => l.id).Count();
+                var lastDay = db.Logs.Where(l => l.datestamp >= DateTime.Today && l.function_query != "SendAlertsError" && l.function_query != "Enable" && l.function_query != "Disable" && l.function_query != "Start SendAlerts" && l.function_query != "End SendAlerts").Select(l => l.id).Count();
+                var lastWeek = db.Logs.Where(l => l.datestamp >= sevenDaysAgo && l.function_query != "SendAlertsError" && l.function_query != "Enable" && l.function_query != "Disable" && l.function_query != "Start SendAlerts" && l.function_query != "End SendAlerts").Select(l => l.id).Count();
+                var lastMonth = db.Logs.Where(l => l.datestamp >= thirtyDaysAgo && l.function_query != "SendAlertsError" && l.function_query != "Enable" && l.function_query != "Disable" && l.function_query != "Start SendAlerts" && l.function_query != "End SendAlerts").Select(l => l.id).Count();
+                var allTime = db.Logs.Where(l => l.function_query != "SendAlertsError" && l.function_query != "Enable" && l.function_query != "Disable" && l.function_query != "Start SendAlerts" && l.function_query != "End SendAlerts").Select(l => l.id).Count();
 
                 string stats = lastHalfHour.ToString() + ";" + lastDay.ToString() + ";" + lastWeek.ToString() + ";" + lastMonth.ToString() + ";" + allTime.ToString();
                 Context.Response.Output.WriteLine(stats);
@@ -244,7 +259,7 @@ namespace SMSProject
                                                        msg = combined_entry.z_alerts.message,
                                                        date = combined_entry.z_alerts.date_emailsent,
                                                        email = asp_users.Email
-                                                   }).Distinct().Take(300);
+                                                   }).Distinct();
                 string response = "";
                 foreach (var entry in entries)
                 {
