@@ -109,7 +109,7 @@ namespace SMSProject
                         if (DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddMinutes(-30)) >= 0)
                         {
                             string message = row.msg.Replace(';', ',');
-
+                            
                             // Fill in these feilds.
                             string login = "";
                             string password = "";
@@ -130,7 +130,7 @@ namespace SMSProject
                                 {
                                     user_id = row.username,
                                     page = HttpContext.Current.Request.Url.AbsoluteUri,
-                                    function_query = "SendAlertsError",
+                                    function_query = "SendAlerts",
                                     error = response.StatusCode.ToString(),
                                     note = "message:\'" + message + "\' has been sent",
                                     datestamp = DateTime.Now,
@@ -143,7 +143,7 @@ namespace SMSProject
                                 {
                                     user_id = row.username,
                                     page = HttpContext.Current.Request.Url.AbsoluteUri,
-                                    function_query = "SendAlerts",
+                                    function_query = "SendAlertsError",
                                     error = errorCode,
                                     note = "message:\'" + message + "\' encountered an error while sending.",
                                     datestamp = DateTime.Now,
