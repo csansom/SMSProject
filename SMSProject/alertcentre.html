@@ -11,7 +11,7 @@
         var getStats = function getStats() {
             $.ajax({
                 type: "POST",
-                url: 'http://cattleman-001-site1.itempurl.com/SMSservice/db.asmx/GetStats',
+                url: 'db.asmx/GetStats',
                 success: function (result) {
                     var stats = result.split(";");
                     $("#30min").html(stats[0]);
@@ -27,7 +27,7 @@
         var getUsers = function getUsers() {
             $.ajax({
                 type: "POST",
-                url: 'http://cattleman-001-site1.itempurl.com/SMSservice/db.asmx/GetUsers',
+                url: 'db.asmx/GetUsers',
                 success: function (result) {
                     var select = document.getElementById("users");
                     var users = result.split(";");
@@ -48,7 +48,7 @@
             var newNumber = numberFeild.value;
             $.ajax({
                 type: "POST",
-                url: 'http://cattleman-001-site1.itempurl.com/SMSservice/db.asmx/SetNewNumber',
+                url: 'db.asmx/SetNewNumber',
                 data: {
                     NameAndNumber: name,
                     PhoneNumber: newNumber
@@ -68,7 +68,7 @@
         var getLog = function getLog() {
             $.ajax({
                 type: "POST",
-                url: 'http://cattleman-001-site1.itempurl.com/SMSservice/db.asmx/GetGridEntires',
+                url: 'db.asmx/GetGridEntires',
                 success: function (result) {
                     $("#grid").dxDataGrid({
                        dataSource: result,

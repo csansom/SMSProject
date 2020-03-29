@@ -20,7 +20,7 @@ namespace SMSProject
     /// <summary>
     /// Summary description for db
     /// </summary>
-    [WebService(Namespace = "http://cattleman-001-site1.itempurl.com/SMSservice/")]
+    [WebService(Namespace = "http://cattleman-001-site1/SMSservice")]
     [WebServiceBinding(ConformsTo = WsiProfiles.BasicProfile1_1)]
     [System.ComponentModel.ToolboxItem(false)]
     [System.Web.Script.Services.ScriptService]
@@ -106,24 +106,22 @@ namespace SMSProject
                     List<Log> logEntries = new List<Log>();
                     foreach (var row in rows)
                     {
-                        if (DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddMinutes(-30)) >= 0)
+                        if (DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddMinutes(-30).AddHours(3)) >= 0)
                         {
                             string message = row.msg.Replace(';', ',');
-                            
+
                             // Fill in these feilds.
                             string login = "";
                             string password = "";
                             string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
-                            string errorCode = "";
 
                             try
                             {
                                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                                 request.Method = "GET";
                                 var response = (HttpWebResponse)request.GetResponse();
-                                errorCode = response.StatusCode.ToString();
 
-                                if (errorCode.Equals("OK"))
+                                if (response.StatusCode.ToString().Equals("OK"))
                                     messagesSent++;
 
                                 logEntries.Add(new Log
@@ -137,14 +135,14 @@ namespace SMSProject
                                     recipient = row.phoneNumber
                                 });
                             }
-                            catch (global::System.Exception)
+                            catch (global::System.Exception e)
                             {
                                 logEntries.Add(new Log
                                 {
                                     user_id = row.username,
                                     page = HttpContext.Current.Request.Url.AbsoluteUri,
                                     function_query = "SendAlertsError",
-                                    error = errorCode,
+                                    error = e.Message,
                                     note = "message:\'" + message + "\' encountered an error while sending.",
                                     datestamp = DateTime.Now,
                                     recipient = row.phoneNumber
