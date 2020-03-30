@@ -43,13 +43,13 @@ namespace SMSProject
                 {
                     Context.Response.Output.WriteLine("Disable SMS Service");
                     functionQuery = "Enable";
-                    note = "Service Enabled at " + DateTime.Now;
+                    note = "Service Enabled at " + DateTime.Now.AddHours(3);
                 }
                 else
                 {
                     Context.Response.Output.WriteLine("Enable SMS Service");
                     functionQuery = "Disable";
-                    note = "Service Disabled at " + DateTime.Now;
+                    note = "Service Disabled at " + DateTime.Now.AddHours(3);
                 }
                 db.Logs.Add(new Log
                 {
@@ -82,8 +82,8 @@ namespace SMSProject
                         page = HttpContext.Current.Request.Url.AbsoluteUri,
                         function_query = "Start SendAlerts",
                         error = null,
-                        note = "Service Started at " + DateTime.Now,
-                        datestamp = DateTime.Now,
+                        note = "Service Started at " + DateTime.Now.AddHours(3),
+                        datestamp = DateTime.Now.AddHours(3),
                         recipient = null
                     });
                     db.SaveChanges();
@@ -106,7 +106,8 @@ namespace SMSProject
                     List<Log> logEntries = new List<Log>();
                     foreach (var row in rows)
                     {
-                        if (DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddMinutes(-30).AddHours(3)) >= 0)
+                        if (DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddMinutes(-30).AddHours(3)) >= 0 &&
+                            DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddHours(3)) <= 0)
                         {
                             string message = row.msg.Replace(';', ',');
 
@@ -131,7 +132,7 @@ namespace SMSProject
                                     function_query = "SendAlerts",
                                     error = response.StatusCode.ToString(),
                                     note = "message:\'" + message + "\' has been sent",
-                                    datestamp = DateTime.Now,
+                                    datestamp = DateTime.Now.AddHours(3),
                                     recipient = row.phoneNumber
                                 });
                             }
@@ -163,7 +164,7 @@ namespace SMSProject
                         function_query = "End SendAlerts",
                         error = null,
                         note = "Service Finished at " + DateTime.Now.AddHours(3),
-                        datestamp = DateTime.Now,
+                        datestamp = DateTime.Now.AddHours(3),
                         recipient = null
                     });
                     db.SaveChanges();
@@ -182,14 +183,14 @@ namespace SMSProject
         {
             using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
             {
-                var timeMinusThirtyMinutes = DateTime.Now.AddMinutes(-30);
+                var timeMinusThirtyMinutes = DateTime.Now.AddMinutes(-30).AddHours(3);
                 var sevenDaysAgo = DateTime.Today.AddDays(-7);
                 var thirtyDaysAgo = DateTime.Today.AddDays(-30);
-                var lastHalfHour = db.Logs.Where(l => l.datestamp >= timeMinusThirtyMinutes && l.function_query != "SendAlertsError" && l.function_query != "Enable" && l.function_query != "Disable" && l.function_query != "Start SendAlerts" && l.function_query != "End SendAlerts").Select(l => l.id).Count();
-                var lastDay = db.Logs.Where(l => l.datestamp >= DateTime.Today && l.function_query != "SendAlertsError" && l.function_query != "Enable" && l.function_query != "Disable" && l.function_query != "Start SendAlerts" && l.function_query != "End SendAlerts").Select(l => l.id).Count();
-                var lastWeek = db.Logs.Where(l => l.datestamp >= sevenDaysAgo && l.function_query != "SendAlertsError" && l.function_query != "Enable" && l.function_query != "Disable" && l.function_query != "Start SendAlerts" && l.function_query != "End SendAlerts").Select(l => l.id).Count();
-                var lastMonth = db.Logs.Where(l => l.datestamp >= thirtyDaysAgo && l.function_query != "SendAlertsError" && l.function_query != "Enable" && l.function_query != "Disable" && l.function_query != "Start SendAlerts" && l.function_query != "End SendAlerts").Select(l => l.id).Count();
-                var allTime = db.Logs.Where(l => l.function_query != "SendAlertsError" && l.function_query != "Enable" && l.function_query != "Disable" && l.function_query != "Start SendAlerts" && l.function_query != "End SendAlerts").Select(l => l.id).Count();
+                var lastHalfHour = db.Logs.Where(l => l.datestamp >= timeMinusThirtyMinutes && l.function_query != "SendAlerts" ).Select(l => l.id).Count();
+                var lastDay = db.Logs.Where(l => l.datestamp >= DateTime.Today && l.function_query == "SendAlerts").Select(l => l.id).Count();
+                var lastWeek = db.Logs.Where(l => l.datestamp >= sevenDaysAgo && l.function_query == "SendAlerts").Select(l => l.id).Count();
+                var lastMonth = db.Logs.Where(l => l.datestamp >= thirtyDaysAgo && l.function_query == "SendAlerts").Select(l => l.id).Count();
+                var allTime = db.Logs.Where(l => l.function_query == "SendAlerts").Select(l => l.id).Count();
 
                 string stats = lastHalfHour.ToString() + ";" + lastDay.ToString() + ";" + lastWeek.ToString() + ";" + lastMonth.ToString() + ";" + allTime.ToString();
                 Context.Response.Output.WriteLine(stats);
@@ -242,7 +243,7 @@ namespace SMSProject
                 Context.Response.Clear();
                 Context.Response.ContentType = "application/json; charset=utf-8";
                 Context.Response.Output.Write("[");
-                var entries = db.Z_AlertLogs.OrderByDescending(x => x.date_emailsent).Join(db.FarmCows,
+                var entries = db.Z_AlertLogs.Join(db.FarmCows,
                                                    z_alerts => z_alerts.bolus_id,
                                                    farm_cows => farm_cows.Bolus_ID,
                                                    (z_alerts, farm_cows) => new { z_alerts, farm_cows })
