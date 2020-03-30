@@ -111,8 +111,8 @@ namespace SMSProject
                             string message = row.msg.Replace(';', ',');
 
                             // Fill in these feilds.
-                            string login = "csansom";
-                            string password = "b8f26140e4837dc4bba68ded9504a7f3";
+                            string login = "";
+                            string password = "";
                             string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
 
                             try
