@@ -53,12 +53,12 @@ namespace SMSProject
                 }
                 db.Logs.Add(new Log
                 {
-                    user_id = null,
+                    user_id = "Admin",
                     page = HttpContext.Current.Request.Url.AbsoluteUri,
                     function_query = functionQuery,
                     error = null,
                     note = note,
-                    datestamp = DateTime.Now,
+                    datestamp = DateTime.Now.AddHours(3),
                     recipient = null
                 });
                 db.SaveChanges();
@@ -78,7 +78,7 @@ namespace SMSProject
 
                     db.Logs.Add(new Log
                     {
-                        user_id = null,
+                        user_id = "Admin",
                         page = HttpContext.Current.Request.Url.AbsoluteUri,
                         function_query = "Start SendAlerts",
                         error = null,
@@ -111,8 +111,8 @@ namespace SMSProject
                             string message = row.msg.Replace(';', ',');
 
                             // Fill in these feilds.
-                            string login = "";
-                            string password = "";
+                            string login = "csansom";
+                            string password = "b8f26140e4837dc4bba68ded9504a7f3";
                             string url = "http://api.smsfeedback.ru/messages/v2/send/?login=" + login + "&password=" + password + "&phone=%2B" + row.phoneNumber + "&text=" + message;
 
                             try
@@ -126,7 +126,7 @@ namespace SMSProject
 
                                 logEntries.Add(new Log
                                 {
-                                    user_id = row.username,
+                                    user_id = "Admin",
                                     page = HttpContext.Current.Request.Url.AbsoluteUri,
                                     function_query = "SendAlerts",
                                     error = response.StatusCode.ToString(),
@@ -139,12 +139,12 @@ namespace SMSProject
                             {
                                 logEntries.Add(new Log
                                 {
-                                    user_id = row.username,
+                                    user_id = "Admin",
                                     page = HttpContext.Current.Request.Url.AbsoluteUri,
                                     function_query = "SendAlertsError",
                                     error = e.Message,
                                     note = "message:\'" + message + "\' encountered an error while sending.",
-                                    datestamp = DateTime.Now,
+                                    datestamp = DateTime.Now.AddHours(3),
                                     recipient = row.phoneNumber
                                 });
                             }
@@ -155,14 +155,14 @@ namespace SMSProject
                         db.Logs.Add(logRow);
                         db.SaveChanges();
                     }
-                    Context.Response.Output.WriteLine(messagesSent + " alert(s) were sent at " + DateTime.Now.ToString() + ".");
+                    Context.Response.Output.WriteLine(messagesSent + " alert(s) were sent at " + DateTime.Now.AddHours(3).ToString() + ".");
                     db.Logs.Add(new Log
                     {
-                        user_id = null,
+                        user_id = "Admin",
                         page = HttpContext.Current.Request.Url.AbsoluteUri,
                         function_query = "End SendAlerts",
                         error = null,
-                        note = "Service Finished at " + DateTime.Now,
+                        note = "Service Finished at " + DateTime.Now.AddHours(3),
                         datestamp = DateTime.Now,
                         recipient = null
                     });
