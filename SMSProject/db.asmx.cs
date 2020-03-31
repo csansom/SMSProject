@@ -186,7 +186,7 @@ namespace SMSProject
                 var timeMinusThirtyMinutes = DateTime.Now.AddMinutes(-30).AddHours(3);
                 var sevenDaysAgo = DateTime.Today.AddDays(-7);
                 var thirtyDaysAgo = DateTime.Today.AddDays(-30);
-                var lastHalfHour = db.Logs.Where(l => l.datestamp >= timeMinusThirtyMinutes && l.function_query != "SendAlerts" ).Select(l => l.id).Count();
+                var lastHalfHour = db.Logs.Where(l => l.datestamp >= timeMinusThirtyMinutes && l.function_query == "SendAlerts" ).Select(l => l.id).Count();
                 var lastDay = db.Logs.Where(l => l.datestamp >= DateTime.Today && l.function_query == "SendAlerts").Select(l => l.id).Count();
                 var lastWeek = db.Logs.Where(l => l.datestamp >= sevenDaysAgo && l.function_query == "SendAlerts").Select(l => l.id).Count();
                 var lastMonth = db.Logs.Where(l => l.datestamp >= thirtyDaysAgo && l.function_query == "SendAlerts").Select(l => l.id).Count();
@@ -250,24 +250,30 @@ namespace SMSProject
                                                    .Join(db.AspNetUsers,
                                                    combined_entry => combined_entry.farm_cows.AspNetUser_ID,
                                                    asp_users => asp_users.Id,
-                                                   (combined_entry, asp_users) => new
+                                                   (combined_entry, asp_users) => new {combined_entry, asp_users})
+                                                   .Join(db.Farms,
+                                                   full_entry => full_entry.combined_entry.farm_cows.AspNetUser_ID,
+                                                   farms => farms.AspNetUser_Id,
+                                                   (full_entry, farms) => new
                                                    {
-                                                       username = asp_users.UserName,
-                                                       bolusID = combined_entry.z_alerts.bolus_id,
-                                                       ev = combined_entry.z_alerts.@event,
-                                                       msg = combined_entry.z_alerts.message,
-                                                       date = combined_entry.z_alerts.date_emailsent,
-                                                       email = asp_users.Email
+                                                       farm = farms.Name,
+                                                       ev = full_entry.combined_entry.z_alerts.@event,
+                                                       msg = full_entry.combined_entry.z_alerts.message,
+                                                       date = full_entry.combined_entry.z_alerts.date_emailsent,
+                                                       owner = farms.Owner,
+                                                       number = full_entry.asp_users.PhoneNumber
                                                    }).Distinct();
                 string response = "";
                 foreach (var entry in entries)
                 {
-                    response = response + "{\"Name\":\"" + entry.username + 
-                        "\",\"BolusID\":\"" + entry.bolusID + 
+                    response = response + "{" +
+                        "\"Farm\":\"" + entry.farm + 
                         "\",\"Event\":\"" + entry.ev +
                         "\",\"Message\":\"" + entry.msg +
                         "\",\"Date\":\"" + entry.date.ToString() +
-                        "\",\"Email\":\"" + entry.email + "\"},";
+                        "\",\"Recipient\":\"" + entry.owner +
+                        "\",\"PhoneNumber\":\"" + entry.number + 
+                        "\"},";
                     
                 }
                 response = response.Remove(response.Length - 1);
@@ -277,6 +283,22 @@ namespace SMSProject
             Context.Response.End();
             return string.Empty;
         }
-        
+
+        [WebMethod]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public string GetLastCall()
+        {
+            using (DB_A4A060_csEntities db = new DB_A4A060_csEntities())
+            {
+                var lastCall = db.Logs.Where(l => l.function_query == "Start SendAlerts").OrderByDescending(l => l.datestamp).FirstOrDefault();
+                var lastAlert = db.Logs.Where(l => l.function_query == "SendAlerts").OrderByDescending(l => l.datestamp).FirstOrDefault();
+
+                string stats = lastCall.datestamp.ToString() + ";" + lastAlert.datestamp.ToString();
+                Context.Response.Output.WriteLine(stats);
+            }
+            Context.Response.End();
+            return string.Empty;
+        }
+
     }
 }

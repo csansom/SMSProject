@@ -71,7 +71,8 @@
                 url: 'db.asmx/GetGridEntires',
                 success: function (result) {
                     $("#grid").dxDataGrid({
-                       dataSource: result,
+                        dataSource: result,
+                        noDataText: "Could not load data.",
                         showBorders: true,
                         paging: {
                             pageSize: 10
@@ -81,8 +82,31 @@
                             allowedPageSizes: [5, 10, 20],
                             showInfo: true
                         },
-                        columns: ["Name", "BolusID", "Event", "Message", "Date", "Email"]
+                        filterRow: { visible: true },
+                        headerFilter: { visible: true },
+                        columns: [
+                            { dataField: "Farm", caption: "Farm" },
+                            { dataField: "Event", caption: "Event" },
+                            { dataField: "Message", caption: "Message", allowHeaderFiltering: false},
+                            { dataField: "Date", caption: "Date", dataType: "date", format: "MM/dd/yyyy HH:mm:ss", allowHeaderFiltering: false},
+                            { dataField: "Recipient", caption: "Recipient" },
+                            { dataField: "PhoneNumber", caption: "Phone Number" }
+                        ]
                     });
+                }, error: function (e) {
+                    alert('Could not connect to web service.');
+                }
+            });
+        }
+
+        var getLastCall = function getLastCall() {
+            $.ajax({
+                type: "POST",
+                url: 'db.asmx/GetLastCall',
+                success: function (result) {
+                    var timestamps = result.split(";");
+                    $("#lastCall").html(timestamps[0]);
+                    $("#lastAlert").html(timestamps[1]);
                 }, error: function (e) {
                     alert('Could not connect to web service.');
                 }
@@ -92,8 +116,14 @@
         $(document).ready(function () {
             getUsers();
             getStats();
+            getLastCall();
             getLog();
-            setInterval(getStats(), 30 * 60 * 1000);
+            setInterval(function () {
+                getUsers();
+                getStats();
+                getLastCall();
+                getLog();
+            }, 15 * 60 * 1000);
         })
     </script>
 </head>
@@ -112,29 +142,6 @@
             </div>
         </div>
     </div>
-    <h3 id="header">Alerts sent:</h3>
-    <table style="width:30%">
-        <tr>
-            <td>In the last 30 minutes</td>
-            <td id="30min"></td>
-        </tr>
-        <tr>
-            <td>In the last 24 hours</td>
-            <td id="24hr"></td>
-        </tr>
-        <tr>
-            <td>In the last 7 days</td>
-            <td id="7day"></td>
-        </tr>
-        <tr>
-            <td>In the last 30 days</td>
-            <td id="30day"></td>
-        </tr>
-        <tr>
-            <td>All time</td>
-            <td id="alltime"></td>
-        </tr>
-    </table>
     <br />
     <h4>Update user phone numbers:</h4>
     <div>
@@ -142,8 +149,42 @@
             <option value="select">--Select--</option>
         </select>
         <input id="newNumber" type="text" />
-        <input id="updateButton" type="button" value="Change Number" onclick="updateNumber()"/>
+        <input id="updateButton" type="button" value="Change Number" onclick="updateNumber()" />
     </div>
     <div id="message"></div>
+    <br />
+    <h3 id="header">SMS Service Stats:</h3>
+    <br />
+    <table style="width:30%">
+        <tr>
+            <td>Alerts sent in the last 30 minutes:</td>
+            <td id="30min"></td>
+        </tr>
+        <tr>
+            <td>Alerts sent today:</td>
+            <td id="24hr"></td>
+        </tr>
+        <tr>
+            <td>Alerts sent in the last 7 days:</td>
+            <td id="7day"></td>
+        </tr>
+        <tr>
+            <td>Alerts sent in the last 30 days:</td>
+            <td id="30day"></td>
+        </tr>
+        <tr>
+            <td>Total alerts sent:</td>
+            <td id="alltime"></td>
+        </tr>
+        <tr>
+            <td><h4>Time of Last Service Call:</h4></td>
+            <td id="lastCall"></td>
+        </tr>
+        <tr>
+            <td><h4>Time of Last Sent SMS:</h4></td>
+            <td id="lastAlert"></td>
+        </tr>
+    </table>
+    <br />
 </body>
 </html>
