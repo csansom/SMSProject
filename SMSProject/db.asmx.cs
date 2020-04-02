@@ -134,7 +134,7 @@ namespace SMSProject
                                     page = HttpContext.Current.Request.Url.AbsoluteUri,
                                     function_query = "SendAlerts",
                                     error = response.StatusCode.ToString(),
-                                    note = "message:\'" + message + "\' has been sent",
+                                    note = "message:\'" + row.msg + "\' has been sent",
                                     datestamp = DateTime.Now.AddHours(3),
                                     recipient = row.phoneNumber
                                 });
@@ -149,7 +149,7 @@ namespace SMSProject
                                     page = HttpContext.Current.Request.Url.AbsoluteUri,
                                     function_query = "SendAlertsError",
                                     error = e.Message,
-                                    note = "message:\'" + message + "\' encountered an error while sending.",
+                                    note = "message:\'" + row.msg + "\' encountered an error while sending.",
                                     datestamp = DateTime.Now.AddHours(3),
                                     recipient = row.phoneNumber
                                 });
@@ -269,7 +269,7 @@ namespace SMSProject
                                                                                             date = join3.join2.join1.logs.datestamp,
                                                                                             owner = farms.Owner,
                                                                                             number = join3.asp_users.PhoneNumber
-                                                                                        });
+                                                                                        }).Distinct();
 
                 string response = "";
                 foreach (var entry in entries)
