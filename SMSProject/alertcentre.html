@@ -5,6 +5,37 @@
     <title></title>
     <link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/19.2.6/css/dx.common.css" />
     <link rel="stylesheet" type="text/css" href="https://cdn3.devexpress.com/jslib/19.2.6/css/dx.light.css" />
+    <style>
+        .row {
+            display: flex;
+        }
+
+        .feild {
+           margin-right: 10px;
+        }
+
+        .title {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .sub-header {
+            font-size: 18px;
+        }
+
+        #header {
+            font-size: 24px;
+            text-align: center;
+            padding: 10px 0;
+            border-width: thin;
+            background-color: #e6f0ff;
+        }
+
+        .column {
+            padding: 10px;
+            flex: 50%;
+        }
+
+    </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://cdn3.devexpress.com/jslib/19.2.6/js/dx.all.js"></script>
     <script>
@@ -29,12 +60,11 @@
                 type: "POST",
                 url: 'db.asmx/GetUsers',
                 success: function (result) {
-                    var select = document.getElementById("users");
                     var users = result.split(";");
-                    for (var i = 0; i < users.length - 1; i++) {
-                        var user = users[i];
-                        select.options[i + 1] = new Option(users[i], users[i])
-                    }
+                    $("#select").dxSelectBox({
+                        items: users,
+                        width: 300
+                    });
                 }, error: function (e) {
                     alert('Could not connect to web service.');
                 }
@@ -42,10 +72,10 @@
         }
 
         var updateNumber = function updateNumber() {
-            var select = document.getElementById("users");
-            var numberFeild = document.getElementById("newNumber");
-            var name = select.options[select.selectedIndex].value;
-            var newNumber = numberFeild.value;
+            var select = $("#select").dxSelectBox("instance");
+            var numberFeild = $("#newNumber").dxTextBox("instance");
+            var name = select.option("value");
+            var newNumber = numberFeild.option("value");
             $.ajax({
                 type: "POST",
                 url: 'db.asmx/SetNewNumber',
@@ -56,9 +86,8 @@
                 datatype: 'json',
                 cache: false,
                 success: function (result) {
-                    select.options[select.selectedIndex].text = result;
-                    select.options[select.selectedIndex].value = result;
-                    $("#message").html("Phone number updated.")
+                    getUsers();
+                    $("#message").html("Phone number changed to " + newNumber)
                 }, error: function (e) {
                     alert('Could not connect to web service.');
                 }
@@ -72,7 +101,7 @@
                 success: function (result) {
                     $("#grid").dxDataGrid({
                         dataSource: result,
-                        noDataText: "Could not load data.",
+                        noDataText: "No entries found.",
                         showBorders: true,
                         paging: {
                             pageSize: 10
@@ -85,12 +114,12 @@
                         filterRow: { visible: true },
                         headerFilter: { visible: true },
                         columns: [
-                            { dataField: "Farm", caption: "Farm" },
-                            { dataField: "Event", caption: "Event" },
-                            { dataField: "Message", caption: "Message", allowHeaderFiltering: false},
-                            { dataField: "Date", caption: "Date", dataType: "date", format: "MM/dd/yyyy HH:mm:ss", allowHeaderFiltering: false},
-                            { dataField: "Recipient", caption: "Recipient" },
-                            { dataField: "PhoneNumber", caption: "Phone Number" }
+                            { dataField: "Farm", caption: "Farm", width: '15%' },
+                            { dataField: "Event", caption: "Event", width: '5%' },
+                            { dataField: "Message", caption: "Message", allowHeaderFiltering: false, width: '50%' },
+                            { dataField: "Date", caption: "Date", dataType: "date", format: "MM/dd/yyyy HH:mm:ss", allowHeaderFiltering: false, width: '11%' },
+                            { dataField: "Recipient", caption: "Recipient", width: '11%' },
+                            { dataField: "PhoneNumber", caption: "Phone Number", width: '8%' }
                         ]
                     });
                 }, error: function (e) {
@@ -114,12 +143,25 @@
         }
 
         $(document).ready(function () {
+            $("#newNumber").dxTextBox({
+                mask: "+X (000) 000-0000",
+                maskRules: { "X": /[01-9]/ },
+                width: 150
+            });
+            $("#updateButton").dxButton({
+                stylingMode: "outlined",
+                text: "Change Number",
+                type: "normal",
+                width: 150,
+                onClick: function () {
+                    updateNumber();
+                }
+            });
             getUsers();
             getStats();
             getLastCall();
             getLog();
             setInterval(function () {
-                getUsers();
                 getStats();
                 getLastCall();
                 getLog();
@@ -128,11 +170,11 @@
     </script>
 </head>
 <body>
-    <div class="container">
+    <div  class="row">
         <div id="PanelSWhow">
             <div id="adminAlertsList">
-                <div class="row" style="text-align: center; padding: 10px 0; border-width: thin; background-color: #e6f0ff;">
-                    <h3>Alerts List</h3>
+                <div>
+                    <div id="header" class="title">SMS Service Log</div>
                 </div>
                 <div class="dx-viewport">
                     <div class="demo-container">
@@ -142,49 +184,40 @@
             </div>
         </div>
     </div>
-    <br />
-    <h4>Update user phone numbers:</h4>
-    <div>
-        <select id="users">
-            <option value="select">--Select--</option>
-        </select>
-        <input id="newNumber" type="text" />
-        <input id="updateButton" type="button" value="Change Number" onclick="updateNumber()" />
+    <div class="row">
+        <div id="serviceStats" class="column">
+            <h3 id="userSettings" class="column title">SMS Service Stats:</h3>
+            <div class="row">
+                <div class="column">
+                    <div>Alerts sent in the last 30 minutes:</div>
+                    <div>Alerts sent today:</div>
+                    <div>Alerts sent in the last 7 days:</div>
+                    <div>Alerts sent in the last 30 days:</div>
+                    <div>Total alerts sent:</div>
+                    <div>Time of Last Service Call:</div>
+                    <div>Time of Last Sent SMS:</div>
+                </div>
+                <div class="column">
+                    <div id="30min"></div>
+                    <div id="24hr"></div>
+                    <div id="7day"></div>
+                    <div id="30day"></div>
+                    <div id="alltime"></div>
+                    <div id="lastCall"></div>
+                    <div id="lastAlert"></div>
+                </div>
+            </div>
+        </div>
+        <div id="userSettings" class="column">
+            <h3  class="title sub-header">User Settings:</h3>
+            <div class="feild">Update user phone number:</div>
+            <div class="row">
+                <div id="select" class="feild"></div>
+                <div id="newNumber" class="feild"></div>
+                <div id="updateButton" class="feild"></div>
+            </div>
+            <div id="message"></div>
+        </div>
     </div>
-    <div id="message"></div>
-    <br />
-    <h3 id="header">SMS Service Stats:</h3>
-    <br />
-    <table style="width:30%">
-        <tr>
-            <td>Alerts sent in the last 30 minutes:</td>
-            <td id="30min"></td>
-        </tr>
-        <tr>
-            <td>Alerts sent today:</td>
-            <td id="24hr"></td>
-        </tr>
-        <tr>
-            <td>Alerts sent in the last 7 days:</td>
-            <td id="7day"></td>
-        </tr>
-        <tr>
-            <td>Alerts sent in the last 30 days:</td>
-            <td id="30day"></td>
-        </tr>
-        <tr>
-            <td>Total alerts sent:</td>
-            <td id="alltime"></td>
-        </tr>
-        <tr>
-            <td><h4>Time of Last Service Call:</h4></td>
-            <td id="lastCall"></td>
-        </tr>
-        <tr>
-            <td><h4>Time of Last Sent SMS:</h4></td>
-            <td id="lastAlert"></td>
-        </tr>
-    </table>
-    <br />
 </body>
 </html>

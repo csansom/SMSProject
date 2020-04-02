@@ -102,12 +102,15 @@ namespace SMSProject
                                                        date = combined_entry.z_alerts.date_emailsent,
                                                        phoneNumber = asp_users.PhoneNumber
                                                    }).Distinct();
+                    string lastMessage = "";
+                    string lastRecipient = "";
                     int messagesSent = 0;
                     List<Log> logEntries = new List<Log>();
                     foreach (var row in rows)
                     {
                         if (DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddMinutes(-30).AddHours(3)) >= 0 &&
-                            DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddHours(3)) <= 0)
+                            DateTime.Parse(row.date.ToString()).CompareTo(DateTime.Now.AddHours(3)) <= 0 &&
+                            (row.msg != lastMessage || row.phoneNumber != lastRecipient))
                         {
                             string message = row.msg.Replace(';', ',');
 
@@ -135,6 +138,8 @@ namespace SMSProject
                                     datestamp = DateTime.Now.AddHours(3),
                                     recipient = row.phoneNumber
                                 });
+                                lastMessage = row.msg;
+                                lastRecipient = row.phoneNumber;
                             }
                             catch (global::System.Exception e)
                             {
@@ -243,26 +248,29 @@ namespace SMSProject
                 Context.Response.Clear();
                 Context.Response.ContentType = "application/json; charset=utf-8";
                 Context.Response.Output.Write("[");
-                var entries = db.Z_AlertLogs.Join(db.FarmCows,
-                                                   z_alerts => z_alerts.bolus_id,
-                                                   farm_cows => farm_cows.Bolus_ID,
-                                                   (z_alerts, farm_cows) => new { z_alerts, farm_cows })
-                                                   .Join(db.AspNetUsers,
-                                                   combined_entry => combined_entry.farm_cows.AspNetUser_ID,
-                                                   asp_users => asp_users.Id,
-                                                   (combined_entry, asp_users) => new {combined_entry, asp_users})
-                                                   .Join(db.Farms,
-                                                   full_entry => full_entry.combined_entry.farm_cows.AspNetUser_ID,
-                                                   farms => farms.AspNetUser_Id,
-                                                   (full_entry, farms) => new
-                                                   {
-                                                       farm = farms.Name,
-                                                       ev = full_entry.combined_entry.z_alerts.@event,
-                                                       msg = full_entry.combined_entry.z_alerts.message,
-                                                       date = full_entry.combined_entry.z_alerts.date_emailsent,
-                                                       owner = farms.Owner,
-                                                       number = full_entry.asp_users.PhoneNumber
-                                                   }).Distinct();
+                var entries = db.Logs.Where(l => l.function_query == "SendAlerts").Join(db.Z_AlertLogs,
+                                                                                        logs => logs.note,
+                                                                                        z_alerts => "message:\'" + z_alerts.message + "\' has been sent",
+                                                                                        (logs, z_alerts) => new { logs, z_alerts })
+                                                                                        .Join(db.FarmCows, join1 => join1.z_alerts.bolus_id,
+                                                                                        farm_cows => farm_cows.Bolus_ID,
+                                                                                        (join1, farm_cows) => new { join1, farm_cows })
+                                                                                        .Join(db.AspNetUsers,
+                                                                                        join2 => join2.farm_cows.AspNetUser_ID,
+                                                                                        asp_users => asp_users.Id,
+                                                                                        (join2, asp_users) => new { join2, asp_users})
+                                                                                        .Join(db.Farms,
+                                                                                        join3 => join3.join2.farm_cows.AspNetUser_ID,
+                                                                                        farms => farms.AspNetUser_Id,
+                                                                                        (join3, farms) => new {
+                                                                                            farm = farms.Name,
+                                                                                            ev = join3.join2.join1.z_alerts.@event,
+                                                                                            msg = join3.join2.join1.z_alerts.message,
+                                                                                            date = join3.join2.join1.logs.datestamp,
+                                                                                            owner = farms.Owner,
+                                                                                            number = join3.asp_users.PhoneNumber
+                                                                                        });
+
                 string response = "";
                 foreach (var entry in entries)
                 {
